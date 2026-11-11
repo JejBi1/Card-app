@@ -1,5 +1,7 @@
 # CardStudy – kartičky na učení (Android + web/iPhone)
 
+🇨🇿 Česky · 🇬🇧 [English](README.en.md)
+
 Kartičky pro jazyky (s výslovností) i jiné předměty. Funguje offline, data zůstávají v zařízení.
 
 ## Instalace – Android
