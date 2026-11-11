@@ -1,0 +1,960 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CardStudy</title>
+<meta name="description" content="Kartičky na učení slovíček a dalších předmětů, s výslovností. Funguje offline, data zůstávají v telefonu.">
+<meta name="theme-color" content="#C62828">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="CardStudy">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<style>
+:root {
+  --bg: #fffbff; --surface: #ffffff; --surface2: #f8eeed; --text: #231919; --muted: #6f5f5e; --line: #ecdfde;
+  --primary: #c62828; --on-primary: #ffffff; --primary-soft: #ffdad6; --on-primary-soft: #410002;
+  --es: #ffdad6; --on-es: #410002; --cz: #ffe08b; --on-cz: #2b2000;
+  --good: #2e7d32; --on-good: #ffffff; --bad: #c62828; --on-bad: #ffffff; --warn: #ef6c00;
+  --pill: rgba(255, 255, 255, .6); --toast: #322828;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 4px 14px rgba(0, 0, 0, .08);
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1111; --surface: #251b1a; --surface2: #322726; --text: #f1dedc; --muted: #b9a7a5; --line: #3d302f;
+    --primary: #ffb4ab; --on-primary: #690005; --primary-soft: #5c1a16; --on-primary-soft: #ffdad6;
+    --es: #7d1a15; --on-es: #ffdad6; --cz: #574000; --on-cz: #ffe08b;
+    --good: #81c784; --on-good: #0b2e0d; --bad: #ff8a80; --on-bad: #5f0000; --warn: #ffb74d;
+    --pill: rgba(0, 0, 0, .28); --toast: #f1dedc;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 4px 14px rgba(0, 0, 0, .35);
+  }
+  #toast { color: #231919 !important; }
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif; }
+body { min-height: 100vh; min-height: 100dvh; overscroll-behavior: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+button:disabled { opacity: .4; cursor: default; }
+#app { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; max-width: 640px; margin: 0 auto; }
+
+/* horní lišta */
+.top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 4px; background: var(--bg);
+  padding: calc(env(safe-area-inset-top) + 8px) 8px 8px 16px; }
+.top.back { padding-left: 4px; }
+.top h1 { font-size: 24px; margin: 0; flex: 1; font-weight: 700; }
+.top .t { flex: 1; min-width: 0; }
+.top .t b { display: block; font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top .t small { color: var(--muted); font-size: 13px; }
+.score { font-weight: 600; padding-right: 10px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.icon { width: 44px; height: 44px; border-radius: 50%; display: inline-grid; place-items: center; flex: none; }
+.icon svg { width: 24px; height: 24px; fill: currentColor; }
+.icon:active { background: var(--surface2); }
+
+/* domovská obrazovka */
+main { padding: 8px 16px calc(100px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; }
+.panel { background: var(--surface); border-radius: 20px; box-shadow: var(--shadow); padding: 16px; }
+.panel h2 { font-size: 19px; margin: 0 0 6px; }
+.panel p { margin: 6px 0; }
+.panel.warn { background: var(--primary-soft); color: var(--on-primary-soft); box-shadow: none; }
+.deck .head { display: flex; align-items: flex-start; gap: 4px; }
+.deck-name { flex: 1; min-width: 0; text-align: left; }
+.deck-name b { display: block; font-size: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.deck-name small { color: var(--muted); font-size: 14px; }
+.meter { height: 6px; border-radius: 3px; background: var(--surface2); overflow: hidden; margin: 12px 0 14px; }
+.meter i { display: block; height: 100%; background: var(--primary); border-radius: 3px; transition: width .3s; }
+.row { display: flex; gap: 8px; }
+.row > .btn { flex: 1; }
+.btn { min-height: 48px; border-radius: 24px; padding: 0 16px; font-weight: 600; display: inline-flex;
+  align-items: center; justify-content: center; gap: 8px; transition: transform .1s; }
+.btn:active:not(:disabled) { transform: scale(.97); }
+.btn svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
+.btn.primary { background: var(--primary); color: var(--on-primary); }
+.btn.outline { border: 1.5px solid var(--line); color: var(--primary); }
+.btn.tonal { background: var(--surface2); }
+.btn.good { background: var(--good); color: var(--on-good); }
+.btn.bad { background: var(--bad); color: var(--on-bad); }
+.btn.text { color: var(--primary); padding: 0 10px; min-height: 40px; }
+.fab { position: fixed; z-index: 6; right: max(16px, calc(50% - 304px)); bottom: calc(16px + env(safe-area-inset-bottom));
+  height: 56px; border-radius: 18px; padding: 0 20px; background: var(--primary-soft); color: var(--on-primary-soft);
+  box-shadow: var(--shadow); display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.fab svg { width: 22px; height: 22px; fill: currentColor; }
+pre.fmt { background: var(--surface2); border-radius: 12px; padding: 10px 12px; font-size: 14px; overflow-x: auto; margin: 8px 0; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+
+/* učení */
+.learn { flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 4px 16px calc(12px + env(safe-area-inset-bottom)); }
+.prog { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.prog .meter { flex: 1; margin: 0; }
+.stage { flex: 1; display: flex; min-height: 340px; padding: 16px 0; }
+.card { position: relative; flex: 1; perspective: 1400px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.card.enter { animation: enter .22s ease-out; }
+@keyframes enter { from { transform: scale(.94); opacity: 0; } }
+.inner { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .45s cubic-bezier(.3, .7, .3, 1); }
+.inner.flipped { transform: rotateY(180deg); }
+.face { position: absolute; inset: 0; border-radius: 28px; padding: 24px; box-shadow: var(--shadow); text-align: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.face.back { transform: rotateY(180deg); }
+.inner.flipped .front, .inner:not(.flipped) .back { pointer-events: none; }
+.face.es { background: var(--es); color: var(--on-es); }
+.face.cz { background: var(--cz); color: var(--on-cz); }
+.lbl { font-size: 13px; letter-spacing: .18em; font-weight: 600; opacity: .75; }
+.word { font-size: clamp(30px, 9vw, 44px); font-weight: 700; line-height: 1.15; margin: 14px 0 4px; overflow-wrap: anywhere; }
+.word.long { font-size: clamp(24px, 6.5vw, 32px); }
+.word.xlong { font-size: 20px; font-weight: 600; line-height: 1.3; }
+.note { font-style: italic; opacity: .85; margin-top: 8px; }
+.speak { display: flex; gap: 8px; margin-top: 22px; }
+.pill { height: 44px; padding: 0 16px; border-radius: 22px; background: var(--pill); display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.pill svg { width: 20px; height: 20px; fill: currentColor; }
+.tap { position: absolute; bottom: 18px; font-size: 13px; opacity: .6; }
+.stamp { position: absolute; top: 22px; z-index: 2; font-size: 24px; font-weight: 900; padding: 4px 12px; border: 3px solid;
+  border-radius: 10px; opacity: 0; transition: opacity .1s; pointer-events: none; background: var(--surface); }
+.s-known { right: 20px; color: var(--good); transform: rotate(10deg); }
+.s-unknown { left: 20px; color: var(--bad); transform: rotate(-10deg); }
+.card.to-known .s-known, .card.to-unknown .s-unknown { opacity: 1; }
+.actions { display: flex; gap: 12px; }
+.actions .btn { flex: 1; min-height: 56px; font-size: 17px; }
+.hint { text-align: center; font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+.finish { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px 16px; text-align: center; }
+.finish .big { font-size: 72px; line-height: 1; }
+.finish h2 { margin: 8px 0 0; }
+.finish .btn { width: 100%; max-width: 420px; }
+
+/* seznam slovíček */
+.search { display: flex; align-items: center; gap: 8px; margin: 4px 16px; padding: 0 14px; height: 48px; border-radius: 24px; background: var(--surface2); }
+.search svg { width: 22px; height: 22px; fill: var(--muted); flex: none; }
+.search input { flex: 1; min-width: 0; border: 0; background: none; font: inherit; color: inherit; outline: none; }
+.count { margin: 6px 16px; }
+.words { list-style: none; margin: 0; padding: 0 0 calc(24px + env(safe-area-inset-bottom)); }
+.words li { display: flex; align-items: center; gap: 4px; padding: 8px 4px 8px 16px; border-bottom: 1px solid var(--line); }
+.words .w { flex: 1; min-width: 0; text-align: left; padding: 4px 0; }
+.words .w b { display: block; }
+.words .w span { color: var(--muted); font-size: 14px; }
+.st { font-size: 14px; font-weight: 600; padding: 8px 10px; border-radius: 14px; white-space: nowrap; }
+.st.ok { color: var(--good); }
+.st.no { color: var(--bad); }
+.del svg { fill: var(--muted); width: 20px; height: 20px; }
+
+/* výslovnost */
+.pron { padding: 8px 16px calc(24px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.pron .panel { width: 100%; text-align: center; }
+.pron .word { margin-top: 4px; }
+.mic { width: 120px; height: 120px; border-radius: 50%; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; box-shadow: var(--shadow); }
+.mic svg { width: 56px; height: 56px; fill: currentColor; }
+.mic.listening { animation: pulse 1s infinite; }
+@keyframes pulse { 50% { transform: scale(1.08); } }
+.result { width: 100%; border-radius: 16px; padding: 14px 16px; }
+.result b { font-size: 20px; }
+
+/* spodní panel (menu, nastavení, potvrzení) */
+.overlay { position: fixed; inset: 0; z-index: 20; background: rgba(0, 0, 0, .35); display: flex; align-items: flex-end; justify-content: center; opacity: 0; transition: opacity .2s; }
+.overlay.open { opacity: 1; }
+.sheet { background: var(--surface); width: 100%; max-width: 640px; border-radius: 24px 24px 0 0; max-height: 88vh; overflow: auto;
+  padding: 8px 0 calc(12px + env(safe-area-inset-bottom)); transform: translateY(30px); transition: transform .2s; }
+.overlay.open .sheet { transform: none; }
+.sheet h3 { margin: 12px 20px 8px; font-size: 18px; }
+.sheet .item { display: block; width: 100%; text-align: left; padding: 14px 20px; font-size: 17px; }
+.sheet .item:active { background: var(--surface2); }
+.sheet .item.danger { color: var(--bad); }
+.sheet hr { border: 0; border-top: 1px solid var(--line); margin: 4px 0; }
+.sheet .body { padding: 0 20px 8px; }
+.sheet .btns { display: flex; justify-content: flex-end; gap: 8px; padding: 8px 16px; }
+.field { margin: 14px 0; }
+.field > span { display: block; font-weight: 600; margin-bottom: 6px; }
+.opt { display: flex; align-items: center; gap: 10px; padding: 7px 0; }
+input[type=radio], input[type=checkbox] { width: 20px; height: 20px; margin: 0; accent-color: var(--primary); }
+input[type=range] { width: 100%; accent-color: var(--primary); }
+select { width: 100%; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface2); color: inherit; font: inherit; padding: 0 10px; }
+#toast { position: fixed; left: 50%; top: calc(12px + env(safe-area-inset-top)); z-index: 30; transform: translate(-50%, -20px);
+  background: var(--toast); color: #fff; padding: 12px 18px; border-radius: 14px; max-width: calc(100% - 32px); width: max-content;
+  opacity: 0; transition: .25s; pointer-events: none; font-size: 15px; }
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="file" accept=".csv,.tsv,.txt,text/csv,text/plain" multiple hidden>
+<script>
+'use strict';
+
+// ---------------------------------------------------------------- pomocné
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const plain = (s) => String(s).trim().toLowerCase().normalize('NFD').replace(/\p{Mn}+/gu, '');
+const uid = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
+const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const svg = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
+const ICON = {
+  back: svg('M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z'),
+  more: svg('M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm0 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4z'),
+  plus: svg('M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z'),
+  search: svg('M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'),
+  speaker: svg('M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z'),
+  mic: svg('M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z'),
+  del: svg('M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z'),
+  gear: svg('M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z'),
+};
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ---------------------------------------------------------------- data (jen v tomto zařízení)
+// Kartička: front = slovo / otázka (1. sloupec CSV), back = překlad / odpověď.
+// Seznam: lang = jazyk přední strany pro hlas ('' = bez hlasu, např. jiné předměty).
+const KEY = 'cardstudy.v1';
+const store = { decks: [], settings: { direction: 0, autoSpeak: false, rate: 0.9, voices: {}, lastLang: 'es-ES' } };
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY));
+    if (d) { store.decks = d.decks || []; Object.assign(store.settings, d.settings || {}); }
+  } catch (e) { /* prázdný start */ }
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(store)); }
+  catch (e) { toast('Nepodařilo se uložit: ' + e.message); }
+}
+const deckById = (id) => store.decks.find((d) => d.id === id);
+const isKnown = (c) => c.box > 0;
+const knownCount = (d) => d.cards.filter(isKnown).length;
+const usedLangs = () => [...new Set(store.decks.map((d) => d.lang).filter(Boolean))];
+
+const LANGS = [
+  { code: '', name: 'bez hlasu', adj: '' },
+  { code: 'es-ES', name: 'španělština', adj: 'španělsky' },
+  { code: 'en-GB', name: 'angličtina (UK)', adj: 'anglicky' },
+  { code: 'en-US', name: 'angličtina (US)', adj: 'anglicky US' },
+  { code: 'de-DE', name: 'němčina', adj: 'německy' },
+  { code: 'fr-FR', name: 'francouzština', adj: 'francouzsky' },
+  { code: 'it-IT', name: 'italština', adj: 'italsky' },
+  { code: 'pt-PT', name: 'portugalština', adj: 'portugalsky' },
+  { code: 'ru-RU', name: 'ruština', adj: 'rusky' },
+  { code: 'pl-PL', name: 'polština', adj: 'polsky' },
+  { code: 'cs-CZ', name: 'čeština', adj: 'česky' },
+];
+const langOf = (code) => LANGS.find((l) => l.code === code) || LANGS[0];
+const SAMPLE_SENTENCE = { es: 'Hola, ¿qué tal?', en: 'Hello, how are you?', de: "Hallo, wie geht's?", fr: 'Bonjour, ça va ?',
+  it: 'Ciao, come stai?', pt: 'Olá, tudo bem?', ru: 'Привет, как дела?', pl: 'Cześć, jak się masz?', cs: 'Ahoj, jak se máš?' };
+
+// ---------------------------------------------------------------- CSV
+const GENERIC_HEADERS = new Set(['slovo', 'slovicko', 'word', 'otazka', 'odpoved', 'pojem', 'definice', 'vyznam', 'preklad',
+  'translation', 'meaning', 'question', 'answer', 'term', 'front', 'back', 'cz', 'cs', 'cze', 'czech', 'cesky', 'cestina']);
+const HEADER_LANG = (() => {
+  const m = new Map();
+  const put = (k, v) => { if (!m.has(k)) m.set(k, v); };
+  for (const l of LANGS) if (l.code) for (const k of [plain(l.adj), plain(l.name), l.code.toLowerCase(), l.code.split('-')[0].toLowerCase()]) put(k, l.code);
+  [['espanol', 'es-ES'], ['spanish', 'es-ES'], ['anglictina', 'en-GB'], ['english', 'en-GB'], ['deutsch', 'de-DE'], ['german', 'de-DE'],
+    ['francais', 'fr-FR'], ['french', 'fr-FR'], ['italiano', 'it-IT'], ['italian', 'it-IT'], ['portugues', 'pt-PT'],
+    ['russian', 'ru-RU'], ['polski', 'pl-PL']].forEach(([k, v]) => put(k, v));
+  return m;
+})();
+
+/** UTF-8 (i s BOM), UTF-16 s BOM, jinak Windows-1250 (český Excel). */
+function decode(buf) {
+  const b = new Uint8Array(buf);
+  if (b[0] === 0xFF && b[1] === 0xFE) return new TextDecoder('utf-16le').decode(b.subarray(2));
+  if (b[0] === 0xFE && b[1] === 0xFF) return new TextDecoder('utf-16be').decode(b.subarray(2));
+  try { return new TextDecoder('utf-8', { fatal: true }).decode(b); }
+  catch (e) {
+    try { return new TextDecoder('windows-1250').decode(b); } catch (e2) { return new TextDecoder().decode(b); }
+  }
+}
+function detectDelim(text) {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim()).slice(0, 30);
+  let best = ';', n = -1;
+  for (const d of [';', '\t', ',', '|', '=']) {
+    const c = lines.filter((l) => l.includes(d)).length;
+    if (c > n) { n = c; best = d; }
+  }
+  return best;
+}
+function parseCsv(text, delim = detectDelim(text)) {
+  const rows = [];
+  let row = [], sb = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) {
+      if (ch === '"') { if (text[i + 1] === '"') { sb += '"'; i++; } else q = false; }
+      else sb += ch;
+    } else if (ch === '"' && !sb.trim()) { sb = ''; q = true; }
+    else if (ch === delim) { row.push(sb); sb = ''; }
+    else if (ch === '\r') { /* nic */ }
+    else if (ch === '\n') { row.push(sb); sb = ''; rows.push(row); row = []; }
+    else sb += ch;
+  }
+  if (sb || row.length) { row.push(sb); rows.push(row); }
+  return rows;
+}
+const isHeaderWord = (s) => { const p = plain(s); return GENERIC_HEADERS.has(p) || HEADER_LANG.has(p); };
+/** Hlavička = první dva sloupce jsou názvy (aby se "es;je" nebralo jako hlavička). */
+const isHeader = (row) => row.length > 0 && isHeaderWord(row[0]) && (row.length < 2 || isHeaderWord(row[1]));
+const headerLang = (row) => HEADER_LANG.get(plain(row[0] || '')) || null;
+function csvStatus(s) {
+  const p = plain(s);
+  if (['umim', 'ano', 'yes', '1', 'x', '✓'].includes(p)) return true;
+  if (['neumim', 'ne', 'no', '0'].includes(p)) return false;
+  return null;
+}
+// Buňka začínající = + - @ by se v Excelu spustila jako vzorec → předřadit apostrof (při importu se zase odstraní).
+const csvSafe = (s) => /^[=+\-@\t\r]/.test(s) ? "'" + s : s;
+const csvUnsafe = (s) => /^'[=+\-@\t\r]/.test(s) ? s.slice(1) : s;
+const csvQuote = (s) => { s = csvSafe(s); return /[;"\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+
+/** Import do seznamu `name`; existující seznam doplní a pokrok zachová. Jazyk pozná z hlavičky. */
+function importCsv(name, text) {
+  let rows = parseCsv(text).map((r) => r.map((c) => csvUnsafe(c.trim()))).filter((r) => r.some((c) => c) && !r[0].startsWith('#'));
+  let hLang = null;
+  if (rows.length && isHeader(rows[0])) { hLang = headerLang(rows[0]); rows = rows.slice(1); }
+  const existing = store.decks.find((d) => d.name.toLowerCase() === name.toLowerCase());
+  const deck = existing || { id: uid(), name, lang: hLang || '', cards: [] };
+  if (existing && hLang && !existing.lang) existing.lang = hLang;
+  const byFront = new Map(deck.cards.map((c) => [c.front.toLowerCase(), c]));
+  let added = 0, updated = 0, skipped = 0;
+  for (const r of rows) {
+    const front = r[0] || '', back = r[1] || '';
+    if (!front || !back) { skipped++; continue; }
+    const status = r.length > 3 ? csvStatus(r[3]) : null;
+    const note = (status !== null ? r.slice(2, 3) : r.slice(2)).filter(Boolean).join(', ');
+    const c = byFront.get(front.toLowerCase());
+    if (!c) {
+      const n = { id: uid(), front, back, note, box: status === true ? 1 : 0, seen: 0, correct: 0 };
+      deck.cards.push(n); byFront.set(front.toLowerCase(), n); added++;
+    } else {
+      let ch = false;
+      if (c.back !== back || c.note !== note) { c.back = back; c.note = note; ch = true; }
+      if (status !== null && status !== isKnown(c)) { c.box = status ? 1 : 0; ch = true; }
+      if (ch) updated++;
+    }
+  }
+  if (!deck.cards.length) throw new Error('v souboru nejsou žádné kartičky (formát: slovo;překlad)');
+  if (!existing) store.decks.push(deck);
+  save();
+  let msg = `„${deck.name}“: přidáno ${added}`;
+  if (updated) msg += `, upraveno ${updated}`;
+  if (skipped) msg += `, přeskočeno ${skipped} řádků`;
+  return { msg, deck, isNew: !existing, langDetected: !!hLang };
+}
+function exportCsv(deck, onlyUnknown) {
+  const cards = onlyUnknown ? deck.cards.filter((c) => !isKnown(c)) : deck.cards;
+  const header = deck.lang ? `${langOf(deck.lang).adj};česky` : 'otázka;odpověď';
+  let text = `﻿${header};poznámka;stav\r\n`;
+  for (const c of cards) text += [c.front, c.back, c.note || '', isKnown(c) ? 'umím' : 'neumím'].map(csvQuote).join(';') + '\r\n';
+  return { text, n: cards.length };
+}
+
+// ---------------------------------------------------------------- řeč
+const tts = { ok: 'speechSynthesis' in window, all: [], checked: false };
+function loadVoices() {
+  if (!tts.ok) return;
+  tts.all = speechSynthesis.getVoices();
+  if (tts.all.length) tts.checked = true;
+}
+/** Hlasy pro jazyk, nejlepší první (stejná země, offline, vylepšené). */
+function voicesFor(lang) {
+  if (!lang) return [];
+  const [l, c] = lang.toLowerCase().split('-');
+  const norm = (v) => v.lang.toLowerCase().replace('_', '-');
+  const score = (v) => (norm(v) === `${l}-${c}` ? 4 : 0) + (v.localService ? 2 : 0) + (/enhanced|premium|mejorad|neural|natural/i.test(v.name) ? 1 : 0);
+  return tts.all.filter((v) => norm(v).split('-')[0] === l).sort((a, b) => score(b) - score(a));
+}
+const missingLangs = () => (tts.ok && tts.checked) ? usedLangs().filter((l) => !voicesFor(l).length) : [];
+const spokenForm = (t) => t.replace(/\(.*?\)|\[.*?\]/g, ' ').replace(/\//g, ',').replace(/…|\.\.\./g, ' ').trim();
+function speak(text, lang, slow) {
+  if (!lang) return;
+  if (!tts.ok) { toast('Tento prohlížeč neumí přehrávat řeč'); return; }
+  if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(spokenForm(text));
+  const vs = voicesFor(lang);
+  const v = vs.find((x) => x.voiceURI === store.settings.voices[lang]) || vs[0];
+  if (v) { u.voice = v; u.lang = v.lang; } else u.lang = lang;
+  u.rate = store.settings.rate * (slow ? 0.6 : 1);
+  speechSynthesis.speak(u);
+}
+
+// hodnocení výslovnosti
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+/** Členy (a "to" u anglických sloves) – slovo se uzná i bez nich. */
+const ARTICLES = new Set(['el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas', 'lo', 'the', 'a', 'an', 'to',
+  'der', 'die', 'das', 'den', 'dem', 'des', 'ein', 'eine', 'einen', 'le', 'les', 'l', 'une', 'il', 'gli', 'i', 'uno',
+  'o', 'os', 'as', 'um', 'uma']);
+const normP = (s) => plain(s).replace(/[^\p{L}\p{N} ]/gu, ' ').replace(/\s+/g, ' ').trim();
+function variants(s) { const w = s.split(' '); return w.length > 1 && ARTICLES.has(w[0]) ? [s, w.slice(1).join(' ')] : [s]; }
+function targets(text) {
+  const base = text.replace(/\(.*?\)|\[.*?\]/g, ' ');
+  const alts = base.split(/[\/;]/).map(normP).filter(Boolean);
+  return [...new Set([...alts, normP(base)].flatMap(variants))];
+}
+function lev(a, b) {
+  let p = Array.from({ length: b.length + 1 }, (_, i) => i), c = new Array(b.length + 1);
+  for (let i = 1; i <= a.length; i++) {
+    c[0] = i;
+    for (let j = 1; j <= b.length; j++) c[j] = Math.min(c[j - 1] + 1, p[j] + 1, p[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    [p, c] = [c, p];
+  }
+  return p[b.length];
+}
+const sim = (a, b) => { const L = Math.max(a.length, b.length); return L ? 1 - lev(a, b) / L : 1; };
+function evaluate(text, heard) {
+  let best = 0, bt = heard[0];
+  const ts = targets(text);
+  for (const h of heard) for (const hv of variants(normP(h))) for (const t of ts) {
+    const s = sim(t, hv);
+    if (s > best) { best = s; bt = h; }
+  }
+  return { score: best, best: bt, others: heard.filter((h) => h !== bt).slice(0, 3) };
+}
+
+// ---------------------------------------------------------------- navigace
+const app = $('#app');
+let view = { name: 'home' };
+function go(v) {
+  view = v;
+  history.pushState({ v: v.name }, '');
+  render();
+  window.scrollTo(0, 0);
+}
+function back() {
+  if (history.state && history.state.v && history.state.v !== 'home') history.back();
+  else { view = { name: 'home' }; render(); }
+}
+window.addEventListener('popstate', () => { closeSheet(); if (view.name !== 'home') { view = { name: 'home' }; render(); } });
+function render() {
+  ({ home: renderHome, learn: renderLearn, words: renderWords, pron: renderPron })[view.name]();
+}
+const topBack = (title, sub, right = '') => `
+  <header class="top back">
+    <button class="icon" data-act="back" aria-label="Zpět">${ICON.back}</button>
+    <div class="t"><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</div>${right}
+  </header>`;
+
+// ---------------------------------------------------------------- domů
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const standalone = window.navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+function renderHome() {
+  let h = `<header class="top"><h1>CardStudy</h1>
+    <button class="icon" data-act="settings" aria-label="Nastavení">${ICON.gear}</button></header><main>`;
+  if (isIOS && !standalone && localStorage.getItem('hideInstall') !== '1') {
+    h += `<div class="panel warn"><h2>Přidej si aplikaci na plochu</h2>
+      <p>V Safari klepni na <b>Sdílet</b> (čtvereček se šipkou) → <b>Přidat na plochu</b>. Pak se otevírá jako aplikace a funguje i offline.</p>
+      <button class="btn text" data-act="hide-install">Rozumím</button></div>`;
+  }
+  const miss = missingLangs();
+  if (miss.length) {
+    h += `<div class="panel warn"><h2>Chybí hlas: ${esc(miss.map((l) => langOf(l).name).join(', '))}</h2>
+      <p>${isIOS ? 'iPhone: Nastavení → Zpřístupnění → Předčítaný obsah → Hlasy → vyber jazyk a stáhni hlas.'
+        : 'Stáhni hlas pro tento jazyk v nastavení převodu textu na řeč v systému.'}</p></div>`;
+  }
+  if (!store.decks.length) {
+    h += `<div class="panel"><h2>Zatím tu nejsou žádné kartičky</h2>
+      <p>Nahraj CSV soubor tlačítkem <b>Import CSV</b>. Každý řádek = jedna kartička:</p>
+      <pre class="fmt">anglicky;česky;poznámka
+the dog;pes
+to speak;mluvit;nepravidelné</pre>
+      <p class="small muted">1. sloupec = slovo nebo otázka, 2. = překlad nebo odpověď. Jazyk pro výslovnost se pozná z hlavičky
+      (španělsky, anglicky, německy…), jinak se aplikace zeptá. Pro jiné předměty použij hlavičku otázka;odpověď.
+      Poznámka a 4. sloupec stav (umím/neumím) jsou nepovinné. Oddělovač ; , nebo tabulátor, z Excelu ukládej jako „CSV UTF-8“.
+      Kartičky zůstávají jen v tomto zařízení.</p>
+      <button class="btn tonal" data-act="sample">Načíst ukázku (španělština)</button></div>`;
+  }
+  for (const d of store.decks) {
+    const t = d.cards.length, k = knownCount(d), u = t - k;
+    h += `<article class="panel deck">
+      <div class="head">
+        <button class="deck-name" data-act="words" data-deck="${d.id}"><b>${esc(d.name)}</b>
+          <small>${esc(langOf(d.lang).name)} · ${t} kartiček · umím ${k} · neumím ${u}</small></button>
+        <button class="icon" data-act="menu" data-deck="${d.id}" aria-label="Další možnosti">${ICON.more}</button>
+      </div>
+      <div class="meter"><i style="width:${t ? (k / t * 100).toFixed(1) : 0}%"></i></div>
+      <div class="row">
+        <button class="btn primary" data-act="learn" data-deck="${d.id}" data-only="1" ${u ? '' : 'disabled'}>Neumím (${u})</button>
+        <button class="btn outline" data-act="learn" data-deck="${d.id}" data-only="0">Všechny (${t})</button>
+      </div></article>`;
+  }
+  h += `</main><button class="fab" data-act="import">${ICON.plus}Import CSV</button>`;
+  app.innerHTML = h;
+}
+
+function deckMenu(d) {
+  const items = [
+    ['Seznam kartiček', () => go({ name: 'words', deckId: d.id, q: '' })],
+    ['Jazyk a hlas…', () => langSheet(d, d.lang, false)],
+  ];
+  if (SR && d.lang) items.push(['Trénink výslovnosti 🎤', () => startPron(d)]);
+  items.push(null,
+    ['Export CSV – všechny', () => exportDeck(d, false)],
+    ['Export CSV – jen neumím', () => exportDeck(d, true)],
+    null,
+    ['Vynulovat pokrok', () => confirmSheet('Vynulovat pokrok?', 'Všechny kartičky v seznamu budou zase jako „neumím“.', 'Vynulovat', () => {
+      d.cards.forEach((c) => { c.box = 0; c.seen = 0; c.correct = 0; }); save(); render();
+    })],
+    ['Smazat seznam', () => confirmSheet(`Smazat seznam „${d.name}“?`, 'Seznam se smaže i s pokrokem. Pokud ho chceš zachovat, nejdřív ho exportuj.', 'Smazat', () => {
+      store.decks = store.decks.filter((x) => x !== d); save(); render();
+    }), true],
+  );
+  menuSheet(d.name, items);
+}
+
+/** Výběr jazyka přední strany (hlas a rozpoznávání řeči). */
+function langSheet(d, initial, isNew) {
+  openSheet(`<h3>${isNew ? `Jaký jazyk je v seznamu „${esc(d.name)}“?` : 'Jazyk seznamu'}</h3><div class="body">
+    <p class="small muted">Podle jazyka 1. sloupce se přehrává výslovnost. Pro jiné předměty zvol „bez hlasu“
+      (nebo češtinu, pokud chceš otázky předčítat).</p>
+    ${LANGS.map((l) => `<label class="opt"><input type="radio" name="lang" value="${l.code}" ${l.code === initial ? 'checked' : ''}>${esc(l.name)}</label>`).join('')}
+  </div><div class="btns"><button class="btn text" data-x="0">Zrušit</button><button class="btn text" data-x="1">Uložit</button></div>`, (ov) => {
+    ov.querySelectorAll('[data-x]').forEach((b) => b.addEventListener('click', () => {
+      if (b.dataset.x === '1') {
+        const sel = ov.querySelector('[name=lang]:checked');
+        d.lang = sel ? sel.value : '';
+        if (d.lang) store.settings.lastLang = d.lang;
+        save();
+        render();
+      }
+      closeSheet();
+    }));
+  });
+}
+
+async function exportDeck(d, onlyUnknown) {
+  const { text, n } = exportCsv(d, onlyUnknown);
+  const name = `${d.name}${onlyUnknown ? ' - neumim' : ''}.csv`;
+  const file = new File([text], name, { type: 'text/csv' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: name }); toast(`Exportováno ${n} kartiček`); return; }
+    catch (e) { if (e.name === 'AbortError') return; }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(file);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  toast(`Exportováno ${n} kartiček`);
+}
+
+// ---------------------------------------------------------------- učení
+let busy = false;
+// frontFirst = nejdřív se ukáže přední strana (slovo / otázka)
+const pickDir = () => store.settings.direction === 0 ? true : store.settings.direction === 1 ? false : Math.random() < 0.5;
+function startLearn(d, onlyUnknown, push = true) {
+  const queue = shuffle(onlyUnknown ? d.cards.filter((c) => !isKnown(c)) : d.cards).map((c) => c.id);
+  const v = { name: 'learn', deckId: d.id, onlyUnknown, queue, total: queue.length, known: 0, unknown: 0, flipped: false, frontFirst: pickDir() };
+  if (push) go(v); else { view = v; render(); }
+  autoSpeak(400);
+}
+const currentDeck = () => deckById(view.deckId);
+const currentCard = () => { const d = currentDeck(); return d && d.cards.find((c) => c.id === view.queue[0]); };
+function face(c, lang, frontSide, isBack) {
+  const text = frontSide ? c.front : c.back;
+  const label = frontSide ? (lang ? langOf(lang).name.split(' (')[0] : 'otázka') : (lang ? 'překlad' : 'odpověď');
+  const size = text.length > 80 ? 'xlong' : text.length > 22 ? 'long' : '';
+  return `<div class="face ${isBack ? 'back' : 'front'} ${frontSide ? 'es' : 'cz'}">
+    <div class="lbl">${esc(label.toUpperCase())}</div>
+    <div class="word ${size}">${esc(text)}</div>
+    ${isBack && c.note ? `<div class="note">${esc(c.note)}</div>` : ''}
+    ${frontSide && lang ? `<div class="speak"><button class="pill" data-act="say">${ICON.speaker}Přehrát</button>
+      <button class="pill" data-act="say" data-slow="1" aria-label="Pomalu">🐢</button></div>` : ''}
+    ${isBack ? '' : '<div class="tap">klepni pro otočení</div>'}
+  </div>`;
+}
+function renderLearn() {
+  const v = view, d = currentDeck();
+  if (!d) return back();
+  // kartičky smazané mezitím přeskočit
+  while (v.queue.length && !d.cards.some((c) => c.id === v.queue[0])) v.queue.shift();
+  const c = currentCard();
+  let h = topBack(d.name, v.onlyUnknown ? 'jen neumím' : 'všechny kartičky', `<div class="score">✓ ${v.known}&nbsp; ✗ ${v.unknown}</div>`);
+  if (!c) {
+    const left = d.cards.length - knownCount(d);
+    h += `<div class="finish">
+      <div class="big">${v.total === 0 || v.unknown === 0 ? '🎉' : '💪'}</div>
+      <h2>${v.total === 0 ? 'Žádné neznámé kartičky' : 'Kolo dokončeno'}</h2>
+      ${v.total ? `<p class="muted">${v.total} kartiček · ✓ ${v.known} ✗ ${v.unknown}</p>` : ''}
+      ${left ? `<button class="btn primary" data-act="again" data-only="1">Znovu jen neumím (${left})</button>` : ''}
+      <button class="btn outline" data-act="again" data-only="0">Znovu všechny</button>
+      <button class="btn tonal" data-act="back">Zpět na seznamy</button></div>`;
+    app.innerHTML = h;
+    return;
+  }
+  const done = v.total - v.queue.length;
+  h += `<div class="learn">
+    <div class="prog"><div class="meter"><i style="width:${(done / v.total * 100).toFixed(1)}%"></i></div><span>${done + 1} / ${v.total}</span></div>
+    <div class="stage"><div class="card enter" id="card">
+      <div class="inner ${v.flipped ? 'flipped' : ''}">${face(c, d.lang, v.frontFirst, false)}${face(c, d.lang, !v.frontFirst, true)}</div>
+      <div class="stamp s-known">UMÍM ✓</div><div class="stamp s-unknown">✗ NEUMÍM</div>
+    </div></div>
+    <div class="actions">
+      <button class="btn good" data-act="known">← Umím</button>
+      <button class="btn bad" data-act="unknown">Neumím →</button>
+    </div>
+    <p class="hint">klepnutí = otočit · swipe ← umím · swipe → neumím</p>
+  </div>`;
+  app.innerHTML = h;
+  bindSwipe($('#card'));
+}
+const frontVisible = () => view.flipped !== view.frontFirst;
+function autoSpeak(delay) {
+  if (!store.settings.autoSpeak) return;
+  setTimeout(() => {
+    if (view.name === 'pron') { const d = currentDeck(), c = pronCard(); if (c) speak(c.front, d.lang); return; }
+    if (view.name === 'learn' && frontVisible()) { const c = currentCard(); if (c) speak(c.front, currentDeck().lang); }
+  }, delay);
+}
+function flip() {
+  view.flipped = !view.flipped;
+  $('.inner').classList.toggle('flipped', view.flipped);
+  autoSpeak(view.flipped ? 350 : 0);
+}
+function fly(known) {
+  const card = $('#card');
+  if (busy || !card) return;
+  busy = true;
+  card.style.transition = 'transform .22s ease-in, opacity .22s';
+  card.style.transform = `translateX(${known ? -130 : 130}%) rotate(${known ? -16 : 16}deg)`;
+  card.style.opacity = '0';
+  setTimeout(() => { busy = false; answer(known); }, 200);
+}
+function answer(known) {
+  const c = currentCard();
+  if (!c) return;
+  c.seen = (c.seen || 0) + 1;
+  if (known) { c.correct = (c.correct || 0) + 1; c.box = Math.min((c.box || 0) + 1, 5); view.known++; }
+  else { c.box = 0; view.unknown++; }
+  save();
+  view.queue.shift();
+  view.flipped = false;
+  view.frontFirst = pickDir();
+  renderLearn();
+  autoSpeak(250);
+}
+function bindSwipe(card) {
+  let x0 = null, dx = 0, moved = false, pid = null;
+  const reset = () => { card.style.transition = 'transform .2s'; card.style.transform = ''; card.classList.remove('to-known', 'to-unknown'); };
+  card.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('button') || busy) return;
+    x0 = e.clientX; dx = 0; moved = false; pid = e.pointerId;
+    card.setPointerCapture(pid);
+    card.style.transition = 'none';
+  });
+  card.addEventListener('pointermove', (e) => {
+    if (x0 === null || e.pointerId !== pid) return;
+    dx = e.clientX - x0;
+    if (Math.abs(dx) > 8) moved = true;
+    if (!moved) return;
+    card.style.transform = `translateX(${dx}px) rotate(${dx / 22}deg)`;
+    card.classList.toggle('to-known', dx < -40);
+    card.classList.toggle('to-unknown', dx > 40);
+  });
+  card.addEventListener('pointerup', (e) => {
+    if (x0 === null || e.pointerId !== pid) return;
+    x0 = null;
+    if (!moved) { card.style.transition = ''; flip(); return; }
+    if (Math.abs(dx) > card.offsetWidth * 0.28) fly(dx < 0); else reset();
+  });
+  card.addEventListener('pointercancel', () => { x0 = null; reset(); });
+}
+
+// ---------------------------------------------------------------- seznam kartiček
+function renderWords() {
+  const d = currentDeck();
+  if (!d) return back();
+  app.innerHTML = topBack(d.name, `${langOf(d.lang).name} · ${d.cards.length} kartiček`) + `
+    <label class="search">${ICON.search}<input type="search" id="q" placeholder="Hledat…" autocomplete="off" value="${esc(view.q || '')}"></label>
+    <p class="count small muted" id="cnt"></p>
+    <ul class="words" id="wl"></ul>`;
+  $('#q').addEventListener('input', (e) => { view.q = e.target.value; renderWordList(); });
+  renderWordList();
+}
+function renderWordList() {
+  const d = currentDeck();
+  const q = plain(view.q || '');
+  const list = d.cards.filter((c) => !q || plain(c.front).includes(q) || plain(c.back).includes(q) || plain(c.note || '').includes(q));
+  $('#cnt').textContent = `${list.length} z ${d.cards.length}` + (d.lang ? ' · klepnutí na kartičku = přehrát' : '');
+  $('#wl').innerHTML = list.map((c) => `<li>
+      <button class="w" data-act="say-id" data-id="${c.id}"><b>${esc(c.front)}</b><span>${esc(c.back)}${c.note ? ' · ' + esc(c.note) : ''}</span></button>
+      <button class="st ${isKnown(c) ? 'ok' : 'no'}" data-act="toggle" data-id="${c.id}">${isKnown(c) ? '✓ umím' : 'neumím'}</button>
+      <button class="icon del" data-act="del" data-id="${c.id}" aria-label="Smazat">${ICON.del}</button></li>`).join('');
+}
+
+// ---------------------------------------------------------------- výslovnost
+function startPron(d) {
+  if (!d.cards.length || !d.lang) return;
+  go({ name: 'pron', deckId: d.id, order: shuffle(d.cards).map((c) => c.id), idx: 0, result: null });
+  autoSpeak(400);
+}
+const pronCard = () => { const d = currentDeck(); return d && d.cards.find((x) => x.id === view.order[view.idx]); };
+function renderPron() {
+  const v = view, d = currentDeck();
+  if (!d) return back();
+  const c = pronCard();
+  if (!c) return back();
+  let res = '';
+  if (v.result) {
+    const pct = Math.round(v.result.score * 100);
+    const [col, verdict] = pct >= 90 ? ['var(--good)', 'Výborně!'] : pct >= 70 ? ['var(--warn)', 'Skoro – zkus to ještě jednou'] : ['var(--bad)', 'Zkus to znovu'];
+    res = `<div class="result" style="background:color-mix(in srgb, ${col} 14%, transparent)">
+      <b style="color:${col}">${pct} % · ${verdict}</b>
+      <div>Rozpoznáno: „${esc(v.result.best)}“</div>
+      ${v.result.others.length ? `<div class="small muted">Další varianty: ${esc(v.result.others.join(', '))}</div>` : ''}</div>`;
+  }
+  app.innerHTML = topBack('Výslovnost', d.name, `<div class="score">${v.idx + 1} / ${v.order.length}</div>`) + `
+    <div class="pron">
+      <div class="panel">
+        <div class="word">${esc(c.front)}</div>
+        <div class="muted">${esc(c.back)}</div>
+        ${c.note ? `<div class="note small">${esc(c.note)}</div>` : ''}
+        <div class="speak" style="justify-content:center">
+          <button class="pill" data-act="say-id" data-id="${c.id}" style="background:var(--surface2)">${ICON.speaker}Poslechnout</button>
+          <button class="pill" data-act="say-id" data-id="${c.id}" data-slow="1" style="background:var(--surface2)">🐢 Pomalu</button>
+        </div>
+      </div>
+      <button class="mic" data-act="listen" aria-label="Vyslovit">${ICON.mic}</button>
+      <div class="muted small">Klepni a řekni to nahlas</div>
+      ${res}
+      <div class="row" style="width:100%">
+        <button class="btn outline" data-act="pron-step" data-step="-1">← Předchozí</button>
+        <button class="btn primary" data-act="pron-step" data-step="1">Další →</button>
+      </div>
+    </div>`;
+}
+function listen() {
+  const d = currentDeck(), c = pronCard();
+  const r = new SR();
+  r.lang = d.lang;
+  r.maxAlternatives = 5;
+  r.interimResults = false;
+  const mic = $('.mic');
+  mic.classList.add('listening');
+  r.onresult = (e) => {
+    const heard = Array.from(e.results[0]).map((a) => a.transcript).filter(Boolean);
+    if (heard.length && view.name === 'pron') { view.result = evaluate(c.front, heard); renderPron(); }
+  };
+  r.onerror = (e) => toast(e.error === 'not-allowed' || e.error === 'service-not-allowed' ? 'Povol přístup k mikrofonu a rozpoznávání řeči'
+    : e.error === 'no-speech' ? 'Nic nebylo slyšet – zkus to znovu' : 'Rozpoznávání se nepovedlo (' + e.error + ')');
+  r.onend = () => { const m = $('.mic'); if (m) m.classList.remove('listening'); };
+  try { r.start(); } catch (e) { mic.classList.remove('listening'); toast('Rozpoznávání řeči není dostupné'); }
+}
+
+// ---------------------------------------------------------------- spodní panely
+function openSheet(html, bind) {
+  closeSheet();
+  const ov = document.createElement('div');
+  ov.className = 'overlay';
+  ov.id = 'overlay';
+  ov.innerHTML = `<div class="sheet" role="dialog" aria-modal="true">${html}</div>`;
+  ov.addEventListener('click', (e) => { if (e.target === ov) closeSheet(); });
+  document.body.appendChild(ov);
+  requestAnimationFrame(() => ov.classList.add('open'));
+  if (bind) bind(ov);
+}
+function closeSheet() { const ov = $('#overlay'); if (ov) ov.remove(); }
+function menuSheet(title, items) {
+  const html = `<h3>${esc(title)}</h3>` + items.map((it, i) => it ? `<button class="item ${it[2] ? 'danger' : ''}" data-i="${i}">${esc(it[0])}</button>` : '<hr>').join('');
+  openSheet(html, (ov) => ov.querySelectorAll('.item').forEach((b) => b.addEventListener('click', () => { closeSheet(); items[+b.dataset.i][1](); })));
+}
+function confirmSheet(title, text, ok, fn) {
+  openSheet(`<h3>${esc(title)}</h3><div class="body"><p>${esc(text)}</p></div>
+    <div class="btns"><button class="btn text" data-x="0">Zrušit</button><button class="btn text" data-x="1" style="color:var(--bad)">${esc(ok)}</button></div>`,
+  (ov) => ov.querySelectorAll('[data-x]').forEach((b) => b.addEventListener('click', () => { closeSheet(); if (b.dataset.x === '1') fn(); })));
+}
+function settingsSheet() {
+  const s = store.settings;
+  const dirs = ['Slovo / otázka', 'Překlad / odpověď', 'Náhodně'];
+  const voiceFields = usedLangs().map((lang) => {
+    const vs = voicesFor(lang);
+    if (vs.length < 2) return '';
+    return `<div class="field"><span>Hlas – ${esc(langOf(lang).name)}</span><select data-voice="${lang}">
+      <option value="">Automaticky (nejlepší)</option>
+      ${vs.map((v) => `<option value="${esc(v.voiceURI)}" ${v.voiceURI === s.voices[lang] ? 'selected' : ''}>${esc(v.name)} (${esc(v.lang)})${v.localService ? '' : ' · online'}</option>`).join('')}
+    </select></div>`;
+  }).join('');
+  openSheet(`<h3>Nastavení</h3><div class="body">
+    <div class="field"><span>Co se ukáže jako první</span>
+      ${dirs.map((t, i) => `<label class="opt"><input type="radio" name="dir" value="${i}" ${s.direction === i ? 'checked' : ''}>${t}</label>`).join('')}</div>
+    <label class="opt"><input type="checkbox" id="auto" ${s.autoSpeak ? 'checked' : ''}>Automaticky přehrát výslovnost</label>
+    <div class="field"><span>Rychlost řeči: <output id="rv">${s.rate.toFixed(1).replace('.', ',')}</output>×</span>
+      <input type="range" id="rate" min="0.4" max="1.4" step="0.1" value="${s.rate}"></div>
+    ${voiceFields}
+    <p class="small muted">Kartičky a pokrok jsou uložené jen v tomto zařízení (v prohlížeči). Zálohu uděláš exportem CSV.
+      Online hlasy posílají text k převodu na server, offline hlasy ne.</p>
+  </div><div class="btns"><button class="btn text" id="done">Hotovo</button></div>`, (ov) => {
+    ov.querySelectorAll('[name=dir]').forEach((r) => r.addEventListener('change', () => { s.direction = +r.value; save(); }));
+    $('#auto', ov).addEventListener('change', (e) => { s.autoSpeak = e.target.checked; save(); });
+    $('#rate', ov).addEventListener('input', (e) => { s.rate = +e.target.value; $('#rv', ov).textContent = s.rate.toFixed(1).replace('.', ','); save(); });
+    ov.querySelectorAll('[data-voice]').forEach((sel) => sel.addEventListener('change', () => {
+      const lang = sel.dataset.voice;
+      s.voices[lang] = sel.value; save();
+      speak(SAMPLE_SENTENCE[lang.split('-')[0]] || 'Hello', lang);
+    }));
+    $('#done', ov).addEventListener('click', closeSheet);
+  });
+}
+
+// ---------------------------------------------------------------- události
+function afterImport(r) {
+  toast(r.msg);
+  if (r.isNew && !r.langDetected) langSheet(r.deck, store.settings.lastLang, true);
+}
+app.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-act]');
+  if (!b) return;
+  const d = b.dataset.deck ? deckById(b.dataset.deck) : currentDeck();
+  switch (b.dataset.act) {
+    case 'settings': settingsSheet(); break;
+    case 'import': $('#file').click(); break;
+    case 'sample': afterImport(importCsv('Ukázka – španělština', SAMPLE)); render(); break;
+    case 'hide-install': localStorage.setItem('hideInstall', '1'); render(); break;
+    case 'menu': deckMenu(d); break;
+    case 'words': go({ name: 'words', deckId: d.id, q: '' }); break;
+    case 'learn': startLearn(d, b.dataset.only === '1'); break;
+    case 'again': startLearn(d, b.dataset.only === '1', false); break;
+    case 'back': back(); break;
+    case 'say': { const c = currentCard(); if (c) speak(c.front, d.lang, !!b.dataset.slow); break; }
+    case 'say-id': { const c = d.cards.find((x) => x.id === b.dataset.id); if (c) speak(c.front, d.lang, !!b.dataset.slow); break; }
+    case 'known': fly(true); break;
+    case 'unknown': fly(false); break;
+    case 'toggle': {
+      const c = d.cards.find((x) => x.id === b.dataset.id);
+      c.box = isKnown(c) ? 0 : 1; save(); renderWordList(); break;
+    }
+    case 'del': {
+      const c = d.cards.find((x) => x.id === b.dataset.id);
+      confirmSheet(`Smazat „${c.front}“?`, 'Kartička se odstraní ze seznamu.', 'Smazat', () => {
+        d.cards = d.cards.filter((x) => x !== c); save(); renderWords();
+      });
+      break;
+    }
+    case 'listen': listen(); break;
+    case 'pron-step':
+      view.idx = (view.idx + +b.dataset.step + view.order.length) % view.order.length;
+      view.result = null; renderPron(); autoSpeak(200); break;
+  }
+});
+$('#file').addEventListener('change', async (e) => {
+  const results = [];
+  for (const f of e.target.files) {
+    try {
+      if (f.size > 5e6) throw new Error(`${f.name}: soubor je moc velký (max. 5 MB)`);
+      const name = f.name.replace(/\.[^.]+$/, '').trim() || 'Kartičky';
+      results.push(importCsv(name, decode(await f.arrayBuffer())));
+    } catch (err) { toast('Import se nepovedl: ' + err.message); }
+  }
+  e.target.value = '';
+  if (view.name === 'home') render();
+  if (results.length) {
+    toast(results.map((r) => r.msg).join(' · '));
+    // u nových seznamů bez jazyka v hlavičce se zeptat (postupně)
+    const ask = results.filter((r) => r.isNew && !r.langDetected);
+    const next = () => { const r = ask.shift(); if (r) { langSheet(r.deck, store.settings.lastLang, true); waitClose(next); } };
+    next();
+  }
+});
+/** Zavolá fn, až se zavře spodní panel. */
+function waitClose(fn) {
+  const t = setInterval(() => { if (!$('#overlay')) { clearInterval(t); fn(); } }, 300);
+}
+document.addEventListener('keydown', (e) => {
+  if ($('#overlay') || view.name !== 'learn' || !currentCard()) return;
+  if (e.key === 'ArrowLeft') fly(true);
+  else if (e.key === 'ArrowRight') fly(false);
+  else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); flip(); }
+  else if (e.key === 's') speak(currentCard().front, currentDeck().lang);
+});
+
+// ---------------------------------------------------------------- ukázka
+const SAMPLE = `španělsky;česky;poznámka
+hola;ahoj
+adiós;sbohem / nashle
+por favor;prosím
+gracias;děkuji
+de nada;není zač
+sí;ano
+no;ne
+buenos días;dobré ráno / dobrý den
+buenas noches;dobrou noc
+¿Cómo estás?;Jak se máš?
+me llamo...;jmenuji se...
+lo siento;promiň / je mi líto
+el agua;voda;ženský rod, ale člen „el“
+el pan;chléb
+la leche;mléko
+el café;káva
+la cerveza;pivo
+el vino;víno
+la casa;dům
+el perro;pes
+el gato;kočka
+el libro;kniha
+la mesa;stůl
+la silla;židle
+el coche;auto
+la calle;ulice
+la ciudad;město
+el trabajo;práce
+la escuela;škola
+el amigo;kamarád
+la amiga;kamarádka
+la familia;rodina
+la madre;matka
+el padre;otec
+el hermano;bratr
+la hermana;sestra
+hablar;mluvit;sloveso -ar
+comer;jíst;sloveso -er
+vivir;žít / bydlet;sloveso -ir
+beber;pít
+ser;být;trvalé vlastnosti
+estar;být;stav, poloha
+tener;mít
+ir;jít / jet
+hacer;dělat
+querer;chtít / milovat
+poder;moci
+saber;vědět / umět
+grande;velký
+pequeño;malý
+bueno;dobrý
+malo;špatný
+nuevo;nový
+viejo;starý
+hoy;dnes
+mañana;zítra / ráno
+ayer;včera
+siempre;vždy
+nunca;nikdy
+¿Dónde está el baño?;Kde je záchod?
+la cuenta, por favor;účet, prosím
+uno;jedna
+dos;dva
+tres;tři`;
+
+// ---------------------------------------------------------------- start
+load();
+history.replaceState({ v: 'home' }, '');
+render();
+if (tts.ok) {
+  const onVoices = () => { loadVoices(); if (view.name === 'home') render(); };
+  loadVoices();
+  if (speechSynthesis.addEventListener) speechSynthesis.addEventListener('voiceschanged', onVoices);
+  else speechSynthesis.onvoiceschanged = onVoices;
+  setTimeout(() => { tts.checked = true; onVoices(); }, 1500);
+}
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>

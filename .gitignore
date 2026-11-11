@@ -1,0 +1,12 @@
+# build výstupy a lokální cesty (local.properties obsahuje cestu s uživatelským jménem)
+*.apk
+*.aab
+*.jks
+*.keystore
+local.properties
+build/
+.gradle/
+.idea/
+*.iml
+.DS_Store
+Thumbs.db

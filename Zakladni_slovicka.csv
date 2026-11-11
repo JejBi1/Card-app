@@ -1,0 +1,117 @@
+﻿Hola;Ahoj;pozdrav;neumím
+Buenos días;Dobré ráno / Dobrý den;pozdrav, dopoledne;neumím
+Buenas tardes;Dobré odpoledne;pozdrav, odpoledne;neumím
+Buenas noches;Dobrý večer / Dobrou noc;pozdrav, večer;neumím
+Adiós;Na shledanou;rozloučení;neumím
+Hasta luego;Na viděnou / Zatím ahoj;rozloučení;neumím
+Por favor;Prosím;zdvořilost;neumím
+Gracias;Děkuji;zdvořilost;neumím
+De nada;Není zač;zdvořilost;neumím
+Perdón / Disculpe;Promiňte;disculpe = vykání;neumím
+Sí;Ano;;neumím
+No;Ne;;neumím
+Me llamo…;Jmenuji se…;představení;neumím
+¿Cómo te llamas?;Jak se jmenuješ?;tykání;neumím
+Mucho gusto;Těší mě;představení;neumím
+¿Cómo estás?;Jak se máš?;tykání;neumím
+Estoy bien / mal / regular;Mám se dobře / špatně / ujde to;představení;neumím
+Soy de…;Jsem z…;ser = být (původ);neumím
+Vivo en…;Bydlím v…;vivir, sloveso -ir;neumím
+Hablo español;Mluvím španělsky;hablar, sloveso -ar;neumím
+No entiendo;Nerozumím;entender, e→ie;neumím
+¿Habla inglés?;Mluvíte anglicky?;vykání;neumím
+la persona;osoba;rodina a lidé;neumím
+el hombre;muž;rodina a lidé;neumím
+la mujer;žena;rodina a lidé;neumím
+el niño / la niña;chlapec / dívka;rodina a lidé;neumím
+la familia;rodina;rodina a lidé;neumím
+la madre;matka;rodina a lidé;neumím
+el padre;otec;rodina a lidé;neumím
+el hermano;bratr;rodina a lidé;neumím
+la hermana;sestra;rodina a lidé;neumím
+el amigo / la amiga;kamarád / kamarádka;rodina a lidé;neumím
+cero;nula;číslo 0;neumím
+uno;jeden;číslo 1;neumím
+dos;dva;číslo 2;neumím
+tres;tři;číslo 3;neumím
+cuatro;čtyři;číslo 4;neumím
+cinco;pět;číslo 5;neumím
+seis;šest;číslo 6;neumím
+siete;sedm;číslo 7;neumím
+ocho;osm;číslo 8;neumím
+nueve;devět;číslo 9;neumím
+diez;deset;číslo 10;neumím
+hoy;dnes;čas;neumím
+mañana;zítra;čas;neumím
+ayer;včera;čas;neumím
+ahora;teď;čas;neumím
+la mañana;ráno;část dne (pozor: mañana = zítra);neumím
+la tarde;odpoledne;část dne;neumím
+la noche;noc;část dne;neumím
+lunes;pondělí;den v týdnu, malým písmenem;neumím
+martes;úterý;den v týdnu, malým písmenem;neumím
+miércoles;středa;den v týdnu, malým písmenem;neumím
+jueves;čtvrtek;den v týdnu, malým písmenem;neumím
+viernes;pátek;den v týdnu, malým písmenem;neumím
+sábado;sobota;den v týdnu, malým písmenem;neumím
+domingo;neděle;den v týdnu, malým písmenem;neumím
+la casa;dům;dům a věci;neumím
+el piso / apartamento;byt;dům a věci;neumím
+la habitación;pokoj;dům a věci;neumím
+la cocina;kuchyně;dům a věci;neumím
+el baño;koupelna;dům a věci;neumím
+la puerta;dveře;dům a věci;neumím
+la ventana;okno;dům a věci;neumím
+la mesa;stůl;dům a věci;neumím
+la silla;židle;dům a věci;neumím
+la cama;postel;dům a věci;neumím
+la llave;klíč;dům a věci;neumím
+el teléfono;telefon;dům a věci;neumím
+el agua;voda;jídlo a pití, ženský rod (el kvůli přízvučnému a-);neumím
+el café;káva;jídlo a pití;neumím
+el té;čaj;jídlo a pití;neumím
+el pan;chléb;jídlo a pití;neumím
+la leche;mléko;jídlo a pití;neumím
+la carne;maso;jídlo a pití;neumím
+el pescado;ryba;jídlo a pití (ryba k jídlu, živá = el pez);neumím
+la fruta;ovoce;jídlo a pití;neumím
+la verdura;zelenina;jídlo a pití;neumím
+la manzana;jablko;jídlo a pití;neumím
+la cerveza;pivo;jídlo a pití;neumím
+la cuenta;účet;v restauraci;neumím
+la ciudad;město;město a doprava;neumím
+la calle;ulice;město a doprava;neumím
+la estación;nádraží / stanice;město a doprava;neumím
+el aeropuerto;letiště;město a doprava;neumím
+el banco;banka;město a doprava (i lavička);neumím
+la tienda;obchod;město a doprava;neumím
+el hospital;nemocnice;město a doprava, h se nevyslovuje;neumím
+el autobús;autobus;město a doprava;neumím
+el tren;vlak;město a doprava;neumím
+el metro;metro;město a doprava;neumím
+el coche;auto;město a doprava;neumím
+el billete;jízdenka;město a doprava;neumím
+ser;být;sloveso -er, nepravidelné (trvalé vlastnosti);neumím
+tener;mít;sloveso -er, nepravidelné (tengo);neumím
+ir;jít / jet;sloveso -ir, nepravidelné (voy);neumím
+venir;přijít / přijet;sloveso -ir, nepravidelné (vengo);neumím
+hacer;dělat;sloveso -er, nepravidelné (hago);neumím
+querer;chtít;sloveso -er, e→ie (quiero);neumím
+necesitar;potřebovat;sloveso -ar;neumím
+comer;jíst;sloveso -er;neumím
+beber;pít;sloveso -er;neumím
+hablar;mluvit;sloveso -ar;neumím
+trabajar;pracovat;sloveso -ar;neumím
+pagar;platit;sloveso -ar;neumím
+¿Dónde está…?;Kde je…?;užitečná fráze;neumím
+¿Cuánto cuesta?;Kolik to stojí?;užitečná fráze;neumím
+Quiero esto;Chci tohle;užitečná fráze;neumím
+Necesito ayuda;Potřebuji pomoc;užitečná fráze;neumím
+Un momento, por favor;Okamžik, prosím;užitečná fráze;neumím
+Más despacio, por favor;Pomaleji, prosím;užitečná fráze;neumím
+¿Puede repetir?;Můžete to zopakovat?;vykání;neumím
+¿Qué significa?;Co to znamená?;užitečná fráze;neumím
+La cuenta, por favor;Účet, prosím;v restauraci;neumím
+No hablo checo;Nemluvím česky;užitečná fráze;neumím
+Hablo un poco de checo;Mluvím trochu česky;užitečná fráze;neumím
+¿Cómo se dice… en checo?;Jak se řekne… česky?;užitečná fráze;neumím

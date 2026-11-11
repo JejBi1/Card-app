@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dvě kartičky přes sebe (zadní bílá, přední žlutá s "řádky textu") -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group android:pivotX="54" android:pivotY="54" android:rotation="-14">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M37,32 h28 a5,5 0 0 1 5,5 v36 a5,5 0 0 1 -5,5 h-28 a5,5 0 0 1 -5,-5 v-36 a5,5 0 0 1 5,-5 z" />
+    </group>
+    <group android:pivotX="54" android:pivotY="54" android:rotation="8" android:translateX="5" android:translateY="2">
+        <path
+            android:fillColor="#FFC400"
+            android:pathData="M41,30 h28 a5,5 0 0 1 5,5 v36 a5,5 0 0 1 -5,5 h-28 a5,5 0 0 1 -5,-5 v-36 a5,5 0 0 1 5,-5 z" />
+        <path
+            android:fillColor="#C62828"
+            android:pathData="M43,42 h24 v5 h-24 z M43,52 h18 v4 h-18 z M43,60 h21 v4 h-21 z" />
+    </group>
+</vector>
